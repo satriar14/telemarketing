@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { analyzedCalls } from "@/data/mockData";
 import { Card, Table, Tag, Button, Tabs, Row, Col, Progress, message, Tooltip, List, Drawer } from "antd";
 import { 
   IconHeadset, 
@@ -71,10 +72,93 @@ export default function CallCenter() {
     return () => clearInterval(timer);
   }, []);
 
+  // Speech to Text simulation state
+  const [liveTranscriptLines, setLiveTranscriptLines] = useState<any[]>([]);
+
+  // Simulation dialog sentences
+  const liveDialogSimulation = [
+    { speaker: "agent", text: "Selamat pagi Ibu Ayu, perkenalkan saya dengan agen telemarketing dari Asuransi Prima." },
+    { speaker: "customer", text: "Selamat pagi. Oh ya, ada apa ya?" },
+    { speaker: "agent", text: "Saya ingin membagikan info mengenai program perlindungan kesehatan terjangkau mulai dari Rp100.000 saja per bulan." },
+    { speaker: "customer", text: "Mmm... menarik sih, tapi saya sudah punya asuransi lain dari kantor." },
+    { speaker: "agent", text: "Sangat bagus Ibu Ayu, namun program kami bisa melakukan klaim ganda tanpa koordinasi manfaat." },
+    { speaker: "customer", text: "Oh ya? Jadi saya bisa dapet double santunan ya kalau rawat inap?" },
+    { speaker: "agent", text: "Betul sekali Ibu Ayu, proteksi tambahan ini melengkapi manfaat dari asuransi kantor Ibu." },
+    { speaker: "customer", text: "Boleh deh, tolong kirimkan brosur detailnya ke WhatsApp saya dulu ya." },
+    { speaker: "agent", text: "Baik Ibu Ayu, mohon ditunggu sebentar brosur akan segera dikirim oleh sistem." }
+  ];
+
+  // Speech to Text simulation effect
+  useEffect(() => {
+    if (!monitoringAgent) {
+      setLiveTranscriptLines([]);
+      return;
+    }
+
+    setLiveTranscriptLines([{ speaker: "system", text: `[System] Membuka streaming transkripsi percakapan ${monitoringAgent.name}...` }]);
+    let currentIndex = 0;
+
+    const interval = setInterval(() => {
+      if (currentIndex < liveDialogSimulation.length) {
+        setLiveTranscriptLines(prev => [...prev, liveDialogSimulation[currentIndex]]);
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [monitoringAgent]);
+
+  // Playback timer simulation state
+  const [playbackSeconds, setPlaybackSeconds] = useState(0);
+
+  // Playback timer simulation effect
+  useEffect(() => {
+    if (!playingRecording || !audioPlaying) return;
+
+    const timer = setInterval(() => {
+      setPlaybackSeconds(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [playingRecording, audioPlaying]);
+
+  useEffect(() => {
+    setPlaybackSeconds(0);
+  }, [playingRecording]);
+
+  const getPlaybackTranscript = () => {
+    if (!playingRecording) return [];
+    // Find matching analyzed call
+    const match = analyzedCalls.find(c => c.customer === playingRecording.customer);
+    if (!match) return [];
+    
+    // Reveal lines based on time: reveal one line every 3 seconds
+    const linesToReveal = Math.min(Math.floor(playbackSeconds / 3) + 1, match.transcript.length);
+    return match.transcript.slice(0, linesToReveal);
+  };
+
+  const getPlaybackTimeStr = () => {
+    if (!playingRecording) return "00:00";
+    const mins = Math.floor(playbackSeconds / 60);
+    const secs = playbackSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getLiveSentiment = () => {
+    const linesCount = Math.max(0, liveTranscriptLines.length - 1);
+    if (linesCount === 0) return { type: "neutral", text: "MENUNGGU...", score: 50, color: "default" };
+    if (linesCount <= 2) return { type: "neutral", text: "NETRAL", score: 62, color: "default" };
+    if (linesCount <= 4) return { type: "negative", text: "NEGATIF (KEBERATAN)", score: 38, color: "error" };
+    if (linesCount <= 7) return { type: "neutral", text: "NETRAL (HANDLING)", score: 58, color: "warning" };
+    return { type: "positive", text: "POSITIF (TERTARIK)", score: 87, color: "success" };
   };
 
   const handleListen = (agent: any) => {
@@ -376,9 +460,10 @@ export default function CallCenter() {
         onClose={() => setMonitoringAgent(null)}
         open={!!monitoringAgent}
         className="custom-drawer"
+        styles={{ body: { height: '100%', display: 'flex', flexDirection: 'column' } }}
       >
         {monitoringAgent && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 h-full">
             {/* Profil Percakapan */}
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3">
               <div className="flex justify-between items-start">
@@ -409,6 +494,37 @@ export default function CallCenter() {
                   <span className="font-mono font-semibold text-slate-700">{formatTime(monitoringAgent.seconds)}</span>
                 </div>
               </div>
+            </div>
+
+            {/* Live Sentiment Analysis */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2.5">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Live Sentiment Analysis (AI Model)</span>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                  </span>
+                  <span className="text-xs font-semibold text-slate-400">Sentimen Prospek:</span>
+                  <Tag color={getLiveSentiment().color} className="rounded font-bold border-0 text-xs py-0.5 px-2 m-0">
+                    {getLiveSentiment().text}
+                  </Tag>
+                </div>
+                <span className="text-xs font-bold text-slate-700">{getLiveSentiment().score}% Confidence</span>
+              </div>
+              <Progress 
+                percent={getLiveSentiment().score} 
+                showInfo={false} 
+                strokeColor={
+                  getLiveSentiment().type === "positive" 
+                    ? "#10b981" 
+                    : getLiveSentiment().type === "negative" 
+                      ? "#ef4444" 
+                      : "#f59e0b"
+                } 
+                size="small"
+                className="m-0"
+              />
             </div>
 
             {/* Kontrol & Visualizer Audio */}
@@ -472,15 +588,34 @@ export default function CallCenter() {
             </div>
 
             {/* AI Live Transcript Display */}
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Live AI Transcript</span>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 min-h-32 max-h-64 overflow-y-auto">
-                <p className="text-sm text-slate-300 leading-relaxed italic m-0">
-                  [System] Membuka streaming transkripsi percakapan {monitoringAgent.name}...
-                </p>
-                <p className="text-xs text-slate-500 mt-2 block">
-                  *Suara percakapan agen sedang diterjemahkan ke teks real-time oleh model AI NLP...
-                </p>
+            <div className="flex flex-col gap-2 flex-grow min-h-0">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Live AI Transcript (Speech to Text)</span>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-y-auto flex flex-col gap-3 flex-grow min-h-0">
+                {liveTranscriptLines.map((line, idx) => {
+                  if (line.speaker === "system") {
+                    return (
+                      <p key={idx} className="text-xs text-slate-400 font-mono m-0 leading-relaxed">
+                        {line.text}
+                      </p>
+                    );
+                  }
+                  const isAgent = line.speaker === "agent";
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`flex flex-col max-w-[85%] ${isAgent ? "self-start" : "self-end items-end"}`}
+                    >
+                      <span className="text-[9px] text-slate-500 font-bold mb-0.5 uppercase tracking-wider">
+                        {isAgent ? "Agen" : "Prospek"}
+                      </span>
+                      <p className={`text-xs m-0 leading-relaxed p-2 rounded-xl ${
+                        isAgent ? "bg-slate-800 text-white rounded-tl-none" : "bg-emerald-950 text-emerald-100 rounded-tr-none border border-emerald-900"
+                      }`}>
+                        {line.text}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -495,9 +630,10 @@ export default function CallCenter() {
         onClose={() => setPlayingRecording(null)}
         open={!!playingRecording}
         className="custom-drawer"
+        styles={{ body: { height: '100%', display: 'flex', flexDirection: 'column' } }}
       >
         {playingRecording && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 h-full">
             {/* Profil Percakapan */}
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3">
               <div className="flex justify-between items-start">
@@ -528,6 +664,27 @@ export default function CallCenter() {
                   <span className="font-semibold text-slate-700">Follow-up Terjadwal</span>
                 </div>
               </div>
+            </div>
+
+            {/* Historical Sentiment Analysis */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2.5">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">AI Sentiment Analysis (Post-Call)</span>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-400">Sentimen Akhir:</span>
+                  <Tag color={playingRecording.sentiment === 'positive' ? 'success' : 'error'} className="rounded font-bold border-0 text-xs py-0.5 px-2 m-0">
+                    {playingRecording.sentiment === 'positive' ? 'POSITIF (TERTARIK)' : 'NEGATIF (MENOLAK)'}
+                  </Tag>
+                </div>
+                <span className="text-xs font-bold text-slate-700">{playingRecording.sentiment === 'positive' ? '92%' : '65%'} Confidence</span>
+              </div>
+              <Progress 
+                percent={playingRecording.sentiment === 'positive' ? 92 : 65} 
+                showInfo={false} 
+                strokeColor={playingRecording.sentiment === 'positive' ? "#10b981" : "#ef4444"} 
+                size="small"
+                className="m-0"
+              />
             </div>
 
             {/* Kontrol & Visualizer Audio */}
@@ -563,17 +720,38 @@ export default function CallCenter() {
                     />
                   ))}
                 </div>
-                <span className="text-xs font-mono text-slate-400 shrink-0">{playingRecording.duration}</span>
+                <span className="text-xs font-mono text-slate-400 shrink-0">{getPlaybackTimeStr()} / {playingRecording.duration}</span>
               </div>
             </div>
 
             {/* AI Transcript Display */}
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Hasil Transkripsi Rekaman AI</span>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 min-h-32 max-h-64 overflow-y-auto">
-                <p className="text-sm text-slate-700 leading-relaxed italic m-0">
-                  "{playingRecording.transcript}"
-                </p>
+            <div className="flex flex-col gap-2 flex-grow min-h-0">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Transkripsi Rekaman (Speech to Text)</span>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-y-auto flex flex-col gap-3 flex-grow min-h-0">
+                {getPlaybackTranscript().length === 0 ? (
+                  <p className="text-xs text-slate-400 font-mono m-0 leading-relaxed">
+                    [System] Memulai pemutaran rekaman audio...
+                  </p>
+                ) : (
+                  getPlaybackTranscript().map((line: any, idx: number) => {
+                    const isAgent = line.speaker === "agent";
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`flex flex-col max-w-[85%] ${isAgent ? "self-start" : "self-end items-end"}`}
+                      >
+                        <span className="text-[9px] text-slate-500 font-bold mb-0.5 uppercase tracking-wider">
+                          {isAgent ? "Agen" : "Prospek"}
+                        </span>
+                        <p className={`text-xs m-0 leading-relaxed p-2 rounded-xl ${
+                          isAgent ? "bg-slate-850 text-white rounded-tl-none border border-slate-800" : "bg-blue-950 text-blue-100 rounded-tr-none border border-blue-900"
+                        }`}>
+                          {line.text}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
