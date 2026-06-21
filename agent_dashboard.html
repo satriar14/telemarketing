@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Agent & Call</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#2563eb',   /* blue-600 */
+                        success: '#059669',   /* emerald-600 */
+                        warning: '#d97706',   /* amber-600 */
+                        danger:  '#dc2626',   /* red-600 */
+                        surface: '#f8fafc',   /* slate-50 */
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* State Classes for JS Toggle */
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item:hover:not(.active) { background-color: #f1f5f9; color: #0f172a; }
+        .nav-item.active { background-color: #eff6ff; color: #1d4ed8; font-weight: 500; border-right: 3px solid #2563eb; }
+        .nav-item.active i { color: #2563eb; }
+        
+        .tab-item.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 500; }
+        
+        /* Pipeline styling */
+        .pipe-line { position: absolute; top: 1rem; left: 50%; width: 100%; height: 2px; z-index: 0; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased h-screen flex overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20 shadow-sm">
+        <!-- Logo -->
+        <div class="px-6 py-5 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-md">
+                    <i class="ti ti-headset"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold text-slate-900 leading-tight">Agent & Call</h1>
+                    <p class="text-[11px] text-slate-500 font-medium tracking-wide uppercase mt-0.5">Telemarketing System</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+            <div>
+                <h2 class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Utama</h2>
+                <div class="space-y-1">
+                    <a href="#" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600" onclick="nav(this, 'dashboard')">
+                        <i class="ti ti-layout-dashboard text-lg text-slate-400"></i> Dashboard
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600" onclick="nav(this, 'data')">
+                        <i class="ti ti-database text-lg text-slate-400"></i> Data Ingestion
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600" onclick="nav(this, 'distrib')">
+                        <i class="ti ti-git-branch text-lg text-slate-400"></i> Distribusi Data
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Operasional</h2>
+                <div class="space-y-1">
+                    <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600" onclick="nav(this, 'call')">
+                        <i class="ti ti-phone text-lg text-slate-400"></i> Call Center
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600" onclick="nav(this, 'ai')">
+                        <i class="ti ti-brain text-lg text-slate-400"></i> AI Analysis
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600" onclick="nav(this, 'garbage')">
+                        <i class="ti ti-clipboard-list text-lg text-slate-400"></i> Garbage Task
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Sistem</h2>
+                <div class="space-y-1">
+                    <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600" onclick="nav(this, 'archive')">
+                        <i class="ti ti-archive text-lg text-slate-400"></i> Archiving
+                    </a>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- User Profile Mini -->
+        <div class="p-4 border-t border-slate-100 flex items-center gap-3 hover:bg-slate-50 cursor-pointer transition-colors">
+            <img src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="Admin" class="w-9 h-9 rounded-full">
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900 truncate">System Admin</p>
+                <p class="text-xs text-slate-500 truncate">admin@telemarketing.id</p>
+            </div>
+            <i class="ti ti-settings text-slate-400"></i>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col min-w-0 bg-slate-50/50">
+        <!-- Topbar -->
+        <header class="bg-white border-b border-slate-200 h-16 px-8 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-sm">
+            <h2 class="text-xl font-semibold text-slate-800" id="page-title">Dashboard</h2>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 shadow-sm">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-xs font-medium">Sistem Aktif</span>
+                </div>
+                <div class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-200 shadow-sm">
+                    10 TL · 97 Agent
+                </div>
+                <div class="h-6 w-px bg-slate-200 mx-2"></div>
+                <button class="relative p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors">
+                    <i class="ti ti-bell text-xl"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-8">
+
+            <!-- ================= PAGE: DASHBOARD ================= -->
+            <div class="page-content block space-y-6" id="page-dashboard">
+                
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-sm font-medium text-slate-500">Total Data Pool</h3>
+                            <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i class="ti ti-database"></i></div>
+                        </div>
+                        <div class="text-3xl font-bold text-slate-800 mb-1">12,480</div>
+                        <div class="flex items-center text-xs text-slate-500">
+                            <span class="flex items-center text-emerald-600 font-medium mr-2">
+                                <i class="ti ti-arrow-up-right mr-1"></i> +12%
+                            </span>
+                            <span>4,210 siap diproses</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-sm font-medium text-slate-500">Panggilan Hari Ini</h3>
+                            <div class="p-2 bg-purple-50 rounded-lg text-purple-600"><i class="ti ti-phone-calling"></i></div>
+                        </div>
+                        <div class="text-3xl font-bold text-slate-800 mb-1">3,741</div>
+                        <div class="flex items-center text-xs text-slate-500">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                            <span>312 sedang berlangsung</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-sm font-medium text-slate-500">Tingkat Konversi</h3>
+                            <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600"><i class="ti ti-chart-arrows"></i></div>
+                        </div>
+                        <div class="text-3xl font-bold text-slate-800 mb-1">18.4%</div>
+                        <div class="flex items-center text-xs text-slate-500">
+                            <span class="flex items-center text-emerald-600 font-medium mr-2">
+                                <i class="ti ti-arrow-up-right mr-1"></i> +2.1%
+                            </span>
+                            <span>vs kemarin</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-sm font-medium text-slate-500">Garbage Task</h3>
+                            <div class="p-2 bg-amber-50 rounded-lg text-amber-600"><i class="ti ti-trash"></i></div>
+                        </div>
+                        <div class="text-3xl font-bold text-slate-800 mb-1">847</div>
+                        <div class="flex items-center text-xs text-slate-500">
+                            <span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
+                            <span>234 perlu tindak lanjut</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pipeline Pipeline -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-800">Alur Proses Sistem</h3>
+                            <p class="text-xs text-slate-500 mt-1">Status real-time dari pergerakan data hingga pengarsipan</p>
+                        </div>
+                        <span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium border border-blue-200 flex items-center gap-1.5">
+                            <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span></span>
+                            Live Tracker
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between relative px-4">
+                        <!-- Step 1 -->
+                        <div class="flex flex-col items-center relative flex-1">
+                            <div class="pipe-line bg-emerald-500"></div>
+                            <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center border-4 border-white shadow-sm z-10">
+                                <i class="ti ti-check text-sm"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-600 mt-3 text-center uppercase tracking-wider">Data<br>Ingestion</span>
+                        </div>
+                        <!-- Step 2 -->
+                        <div class="flex flex-col items-center relative flex-1">
+                            <div class="pipe-line bg-emerald-500"></div>
+                            <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center border-4 border-white shadow-sm z-10">
+                                <i class="ti ti-check text-sm"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-600 mt-3 text-center uppercase tracking-wider">Cleansing<br>& Validasi</span>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="flex flex-col items-center relative flex-1">
+                            <div class="pipe-line bg-emerald-500"></div>
+                            <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center border-4 border-white shadow-sm z-10">
+                                <i class="ti ti-check text-sm"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-600 mt-3 text-center uppercase tracking-wider">Ready<br>Pool</span>
+                        </div>
+                        <!-- Step 4 -->
+                        <div class="flex flex-col items-center relative flex-1">
+                            <div class="pipe-line bg-blue-500"></div>
+                            <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center border-4 border-white shadow-sm z-10">
+                                <i class="ti ti-check text-sm"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-600 mt-3 text-center uppercase tracking-wider">Distribusi<br>Ke TL</span>
+                        </div>
+                        <!-- Step 5 -->
+                        <div class="flex flex-col items-center relative flex-1">
+                            <div class="pipe-line bg-blue-500"></div>
+                            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center border-4 border-white shadow-sm z-10 ring-4 ring-blue-50">
+                                <i class="ti ti-phone text-sm"></i>
+                            </div>
+                            <span class="text-[10px] font-bold text-blue-600 mt-3 text-center uppercase tracking-wider">Distribusi<br>Ke Agent</span>
+                        </div>
+                        <!-- Step 6 -->
+                        <div class="flex flex-col items-center relative flex-1">
+                            <div class="pipe-line bg-slate-200"></div>
+                            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center border-4 border-white shadow-sm z-10 ring-4 ring-blue-50">
+                                <i class="ti ti-headset text-sm"></i>
+                            </div>
+                            <span class="text-[10px] font-bold text-blue-600 mt-3 text-center uppercase tracking-wider">Eksekusi<br>Panggilan</span>
+                        </div>
+                        <!-- Step 7 -->
+                        <div class="flex flex-col items-center relative flex-1">
+                            <div class="pipe-line bg-slate-200"></div>
+                            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center border-4 border-white z-10">
+                                <i class="ti ti-brain text-sm"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-400 mt-3 text-center uppercase tracking-wider">AI<br>Analisis</span>
+                        </div>
+                        <!-- Step 8 -->
+                        <div class="flex flex-col items-center relative flex-1">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center border-4 border-white z-10">
+                                <i class="ti ti-archive text-sm"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-400 mt-3 text-center uppercase tracking-wider">Archiving</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid Row 2 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Agent Aktif -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="text-base font-semibold text-slate-800">Monitoring Agent Aktif</h3>
+                            <button class="text-xs font-medium text-blue-600 hover:text-blue-700" onclick="nav(document.querySelector('[onclick*=call]'),'call')">Lihat Semua &rarr;</button>
+                        </div>
+                        <div class="p-2 flex-1">
+                            <div class="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-sm">AR</div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-slate-900">Adi Rachmat</p>
+                                    <p class="text-xs text-slate-500 flex items-center mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>Sedang menelepon</p>
+                                </div>
+                                <div class="text-sm font-mono font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">04:32</div>
+                            </div>
+                            <div class="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors">
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-semibold text-sm">SN</div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-slate-900">Siti Nur</p>
+                                    <p class="text-xs text-slate-500 flex items-center mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>Sedang menelepon</p>
+                                </div>
+                                <div class="text-sm font-mono font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">01:17</div>
+                            </div>
+                            <div class="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors">
+                                <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-semibold text-sm">BW</div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-slate-900">Budi Wahyu</p>
+                                    <p class="text-xs text-slate-500 flex items-center mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>Istirahat</p>
+                                </div>
+                                <div class="text-sm font-mono font-medium text-slate-400 px-2 py-1">—</div>
+                            </div>
+                            <div class="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors">
+                                <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-semibold text-sm">RP</div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-slate-900">Rina Pratiwi</p>
+                                    <p class="text-xs text-slate-500 flex items-center mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 mr-1.5"></span>Wrap-up</p>
+                                </div>
+                                <div class="text-sm font-mono font-medium text-slate-400 px-2 py-1">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performa TL -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="text-base font-semibold text-slate-800">Distribusi per Team Leader</h3>
+                            <i class="ti ti-chart-bar text-slate-400"></i>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col justify-center space-y-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 text-sm font-medium text-slate-700">TL Bima</div>
+                                <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-600 rounded-full" style="width: 87%"></div>
+                                </div>
+                                <div class="w-10 text-right text-xs font-semibold text-slate-600">87%</div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 text-sm font-medium text-slate-700">TL Dewi</div>
+                                <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-400 rounded-full" style="width: 74%"></div>
+                                </div>
+                                <div class="w-10 text-right text-xs font-semibold text-slate-600">74%</div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 text-sm font-medium text-slate-700">TL Fajar</div>
+                                <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-emerald-500 rounded-full" style="width: 91%"></div>
+                                </div>
+                                <div class="w-10 text-right text-xs font-semibold text-slate-600">91%</div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 text-sm font-medium text-slate-700">TL Hani</div>
+                                <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-amber-400 rounded-full" style="width: 63%"></div>
+                                </div>
+                                <div class="w-10 text-right text-xs font-semibold text-slate-600">63%</div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 text-sm font-medium text-slate-700">TL Irwan</div>
+                                <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-purple-500 rounded-full" style="width: 79%"></div>
+                                </div>
+                                <div class="w-10 text-right text-xs font-semibold text-slate-600">79%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= PAGE: DATA INGESTION ================= -->
+            <div class="page-content hidden space-y-6" id="page-data">
+                
+                <!-- Tabs -->
+                <div class="flex space-x-8 border-b border-slate-200 mb-6 px-2">
+                    <button class="tab-item active pb-3 text-sm transition-colors border-b-2" onclick="switchTab(this,'tab-upload')">Upload File Manual</button>
+                    <button class="tab-item text-slate-500 pb-3 text-sm transition-colors border-b-2 border-transparent hover:text-slate-700" onclick="switchTab(this,'tab-api')">Integrasi API</button>
+                    <button class="tab-item text-slate-500 pb-3 text-sm transition-colors border-b-2 border-transparent hover:text-slate-700" onclick="switchTab(this,'tab-validate')">Log Validasi & Cleansing</button>
+                </div>
+
+                <div id="tab-upload" class="space-y-6">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <h3 class="text-base font-semibold text-slate-800 mb-4">Unggah Data Prospek Baru</h3>
+                        <div class="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center bg-slate-50 hover:bg-slate-100 hover:border-blue-400 transition-all cursor-pointer group">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                                <i class="ti ti-cloud-upload text-3xl text-blue-500"></i>
+                            </div>
+                            <p class="text-slate-800 font-medium mb-1">Seret dan lepas file ke area ini, atau klik untuk menelusuri</p>
+                            <p class="text-sm text-slate-500 mb-6">Mendukung file .xlsx, .csv, .xls (Maksimal 50MB)</p>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg text-sm transition-colors shadow-sm">
+                                Pilih File Dokumen
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="text-base font-semibold text-slate-800">Riwayat File Terunggah</h3>
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-semibold">3 file hari ini</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-6 py-4 font-semibold">Nama File</th>
+                                        <th class="px-6 py-4 font-semibold">Jumlah Baris</th>
+                                        <th class="px-6 py-4 font-semibold">Status Validasi</th>
+                                        <th class="px-6 py-4 font-semibold">Waktu Upload</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="px-6 py-4 font-medium text-slate-800 flex items-center gap-2"><i class="ti ti-file-spreadsheet text-emerald-500 text-lg"></i> prospek_batch_001.xlsx</td>
+                                        <td class="px-6 py-4">4,200</td>
+                                        <td class="px-6 py-4"><span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-xs font-medium border border-emerald-200">Lolos Validasi</span></td>
+                                        <td class="px-6 py-4">Hari ini, 08:14</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="px-6 py-4 font-medium text-slate-800 flex items-center gap-2"><i class="ti ti-file-text text-blue-500 text-lg"></i> data_kampanye_juni.csv</td>
+                                        <td class="px-6 py-4">1,850</td>
+                                        <td class="px-6 py-4"><span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-xs font-medium border border-emerald-200">Lolos Validasi</span></td>
+                                        <td class="px-6 py-4">Hari ini, 09:32</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="px-6 py-4 font-medium text-slate-800 flex items-center gap-2"><i class="ti ti-file-spreadsheet text-emerald-500 text-lg"></i> leads_referral_jkt.xlsx</td>
+                                        <td class="px-6 py-4">920</td>
+                                        <td class="px-6 py-4"><span class="px-2 py-1 rounded bg-amber-50 text-amber-600 text-xs font-medium border border-amber-200">5 Baris Error</span></td>
+                                        <td class="px-6 py-4">Hari ini, 10:05</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-api" class="hidden space-y-6">
+                    <!-- API settings mockup -->
+                    <div class="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm flex items-center justify-center h-64">
+                        <div class="text-center">
+                            <i class="ti ti-api text-4xl text-slate-300 mb-3 block"></i>
+                            <p class="text-slate-500 font-medium">Modul Konfigurasi API sedang dimuat...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-validate" class="hidden space-y-6">
+                     <!-- Validation logic mockup -->
+                     <div class="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm flex items-center justify-center h-64">
+                        <div class="text-center">
+                            <i class="ti ti-filter text-4xl text-slate-300 mb-3 block"></i>
+                            <p class="text-slate-500 font-medium">Log aturan validasi ditampilkan di sini.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= PAGE: DISTRIBUSI ================= -->
+            <div class="page-content hidden space-y-6" id="page-distrib">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Level 1 -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 class="text-base font-semibold text-slate-800">Distribusi Utama (Admin &rarr; TL)</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Alokasi pool data yang sudah valid</p>
+                            </div>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold border border-purple-200">Level 1</span>
+                        </div>
+                        <div class="p-5 border-b border-slate-100 flex flex-wrap gap-3 items-end">
+                            <div class="flex-1 min-w-[120px]">
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Metode</label>
+                                <select class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                                    <option>Distribusi Proporsional</option>
+                                    <option>Sama Rata</option>
+                                    <option>Manual Input</option>
+                                </select>
+                            </div>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors shadow-sm flex items-center gap-2">
+                                <i class="ti ti-player-play text-sm"></i> Eksekusi
+                            </button>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col justify-center space-y-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-20 text-sm font-medium text-slate-800">TL Bima</div>
+                                <input type="text" value="20%" class="w-14 bg-slate-50 border border-slate-200 rounded text-center text-sm py-1 text-slate-600">
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full" style="width: 20%"></div></div>
+                                <div class="w-12 text-right text-xs font-semibold text-slate-500">842 data</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-20 text-sm font-medium text-slate-800">TL Dewi</div>
+                                <input type="text" value="30%" class="w-14 bg-slate-50 border border-slate-200 rounded text-center text-sm py-1 text-slate-600">
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full" style="width: 30%"></div></div>
+                                <div class="w-12 text-right text-xs font-semibold text-slate-500">1,263 data</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-20 text-sm font-medium text-slate-800">TL Fajar</div>
+                                <input type="text" value="25%" class="w-14 bg-slate-50 border border-slate-200 rounded text-center text-sm py-1 text-slate-600">
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full" style="width: 25%"></div></div>
+                                <div class="w-12 text-right text-xs font-semibold text-slate-500">1,052 data</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-20 text-sm font-medium text-slate-800">TL Hani</div>
+                                <input type="text" value="25%" class="w-14 bg-slate-50 border border-slate-200 rounded text-center text-sm py-1 text-slate-600">
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full" style="width: 25%"></div></div>
+                                <div class="w-12 text-right text-xs font-semibold text-slate-500">1,053 data</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Level 2 -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 class="text-base font-semibold text-slate-800">Distribusi Mikro (TL &rarr; Agent)</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Simulasi pembagian dalam satu tim</p>
+                            </div>
+                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-semibold border border-emerald-200">Level 2</span>
+                        </div>
+                        <div class="p-5 border-b border-slate-100 flex flex-wrap gap-3 items-end">
+                            <div class="flex-1 min-w-[120px]">
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Pilih Tim</label>
+                                <select class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                                    <option>Tim Fajar (Tertinggi)</option>
+                                    <option>Tim Bima</option>
+                                    <option>Tim Dewi</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col justify-center space-y-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-24 text-sm font-medium text-slate-800 flex items-center gap-2"><img src="https://ui-avatars.com/api/?name=Adi+Rachmat&background=random&size=24" class="rounded-full"> Adi R.</div>
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-400 rounded-full" style="width: 22%"></div></div>
+                                <div class="w-12 text-right text-xs font-semibold text-slate-500">231</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-24 text-sm font-medium text-slate-800 flex items-center gap-2"><img src="https://ui-avatars.com/api/?name=Siti+Nur&background=random&size=24" class="rounded-full"> Siti N.</div>
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-400 rounded-full" style="width: 25%"></div></div>
+                                <div class="w-12 text-right text-xs font-semibold text-slate-500">263</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-24 text-sm font-medium text-slate-800 flex items-center gap-2"><img src="https://ui-avatars.com/api/?name=Budi+W&background=random&size=24" class="rounded-full"> Budi W.</div>
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-400 rounded-full" style="width: 28%"></div></div>
+                                <div class="w-12 text-right text-xs font-semibold text-slate-500">294</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-24 text-sm font-medium text-slate-800 flex items-center gap-2"><img src="https://ui-avatars.com/api/?name=Rina+P&background=random&size=24" class="rounded-full"> Rina P.</div>
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-400 rounded-full" style="width: 25%"></div></div>
+                                <div class="w-12 text-right text-xs font-semibold text-slate-500">264</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ready Pool Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+                        <h3 class="text-base font-semibold text-slate-800">Antrean Utama (Ready Pool)</h3>
+                        <div class="relative">
+                            <i class="ti ti-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" placeholder="Cari prospek..." class="pl-9 pr-4 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-4 font-semibold">ID</th>
+                                    <th class="px-6 py-4 font-semibold">Nama Prospek</th>
+                                    <th class="px-6 py-4 font-semibold">Nomor Telepon</th>
+                                    <th class="px-6 py-4 font-semibold">Prioritas</th>
+                                    <th class="px-6 py-4 font-semibold">Status Assign</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-3 font-mono text-xs text-slate-400">#4401</td>
+                                    <td class="px-6 py-3 font-medium text-slate-800">Ahmad Fauzi</td>
+                                    <td class="px-6 py-3">0812-xxxx-1234</td>
+                                    <td class="px-6 py-3"><span class="px-2 py-1 rounded bg-red-50 text-red-600 text-[11px] font-bold border border-red-200 uppercase tracking-wide">Tinggi</span></td>
+                                    <td class="px-6 py-3"><span class="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium border border-amber-200 flex inline-flex items-center gap-1"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Antre (Adi R)</span></td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-3 font-mono text-xs text-slate-400">#4402</td>
+                                    <td class="px-6 py-3 font-medium text-slate-800">Lestari Wulan</td>
+                                    <td class="px-6 py-3">0856-xxxx-5678</td>
+                                    <td class="px-6 py-3"><span class="px-2 py-1 rounded bg-blue-50 text-blue-600 text-[11px] font-bold border border-blue-200 uppercase tracking-wide">Normal</span></td>
+                                    <td class="px-6 py-3"><span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium border border-emerald-200 flex inline-flex items-center gap-1"><i class="ti ti-phone-calling text-[10px]"></i> Dipanggil</span></td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-3 font-mono text-xs text-slate-400">#4403</td>
+                                    <td class="px-6 py-3 font-medium text-slate-800">Hendro Saputro</td>
+                                    <td class="px-6 py-3">0821-xxxx-9012</td>
+                                    <td class="px-6 py-3"><span class="px-2 py-1 rounded bg-blue-50 text-blue-600 text-[11px] font-bold border border-blue-200 uppercase tracking-wide">Normal</span></td>
+                                    <td class="px-6 py-3"><span class="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium border border-amber-200 flex inline-flex items-center gap-1"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Antre (Siti N)</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sisa halaman dimockup secara seragam dengan Tailwind -->
+            
+            <div class="page-content hidden space-y-6" id="page-call">
+                <div class="bg-white p-12 border border-slate-200 rounded-2xl shadow-sm text-center">
+                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="ti ti-headset text-4xl text-blue-500"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">Live Call Center Monitor</h2>
+                    <p class="text-slate-500 max-w-md mx-auto">Tampilan ini telah dimodernisasi. Fitur live monitoring, rekaman, dan status agen akan muncul di sini dengan desain komponen yang sama seperti Dashboard.</p>
+                </div>
+            </div>
+
+            <div class="page-content hidden space-y-6" id="page-ai">
+                <div class="bg-white p-12 border border-slate-200 rounded-2xl shadow-sm text-center">
+                    <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="ti ti-brain text-4xl text-purple-500"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">AI Natural Language Analysis</h2>
+                    <p class="text-slate-500 max-w-md mx-auto">Visualisasi sentimen, intent percakapan, dan skor prospek hasil analisa AI terhadap rekaman suara ditampilkan di modul ini.</p>
+                </div>
+            </div>
+
+            <div class="page-content hidden space-y-6" id="page-garbage">
+                <div class="bg-white p-12 border border-slate-200 rounded-2xl shadow-sm text-center">
+                    <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="ti ti-recycle text-4xl text-amber-500"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">Manajemen Garbage Task</h2>
+                    <p class="text-slate-500 max-w-md mx-auto">Follow up otomatis via WhatsApp, penjadwalan ulang, dan eskalasi penolakan diproses di sini.</p>
+                </div>
+            </div>
+
+            <div class="page-content hidden space-y-6" id="page-archive">
+                <div class="bg-white p-12 border border-slate-200 rounded-2xl shadow-sm text-center">
+                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="ti ti-archive text-4xl text-slate-500"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">Sistem Pengarsipan Log & Audio</h2>
+                    <p class="text-slate-500 max-w-md mx-auto">Manajemen retensi data, kompresi audio percakapan, dan pencarian arsip lampau.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        function nav(el, pageId) {
+            // Hapus status aktif dari semua menu navigasi
+            document.querySelectorAll('.nav-item').forEach(n => {
+                n.classList.remove('active');
+            });
+            
+            // Tambahkan status aktif pada menu yang diklik
+            if(el) el.classList.add('active');
+            
+            // Sembunyikan semua konten halaman
+            document.querySelectorAll('.page-content').forEach(p => {
+                p.classList.add('hidden');
+                p.classList.remove('block');
+            });
+            
+            // Tampilkan halaman yang dituju
+            const pg = document.getElementById('page-' + pageId);
+            if(pg) {
+                pg.classList.remove('hidden');
+                pg.classList.add('block');
+            }
+            
+            // Ubah Judul Topbar
+            const titles = {
+                dashboard: 'Dashboard Utama',
+                data: 'Data Ingestion & Cleansing',
+                distrib: 'Distribusi & Alokasi Data',
+                call: 'Live Call Center',
+                ai: 'Analisis AI & NLP',
+                garbage: 'Recovery & Garbage Task',
+                archive: 'Pengarsipan Sistem'
+            };
+            document.getElementById('page-title').textContent = titles[pageId] || pageId;
+        }
+
+        function switchTab(el, tabId) {
+            // Ambil kontainer parent (halaman saat ini)
+            const parent = el.closest('.page-content');
+            
+            // Reset state tab button
+            parent.querySelectorAll('.tab-item').forEach(t => {
+                t.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                t.classList.add('text-slate-500', 'border-transparent');
+            });
+            
+            // Set state tab yang diklik
+            el.classList.add('active');
+            el.classList.remove('text-slate-500', 'border-transparent');
+            
+            // Sembunyikan semua panel tab
+            parent.querySelectorAll('[id^="tab-"]').forEach(t => {
+                t.classList.add('hidden');
+            });
+            
+            // Tampilkan panel yang dituju
+            const tab = document.getElementById(tabId);
+            if(tab) tab.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
