@@ -268,11 +268,11 @@ export default function DataIngestion() {
       <Card className="shadow-sm border-slate-200">
         <h3 className="text-base font-semibold text-slate-800 mb-4">Unggah Data Prospek Baru</h3>
         <Dragger {...uploadProps} className="bg-slate-50 hover:bg-slate-100 p-8 rounded-xl border-dashed">
-          <p className="ant-upload-drag-icon flex justify-center mb-4">
+          <div className="ant-upload-drag-icon flex justify-center mb-4">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
               <IconCloudUpload className="text-blue-500" size={32} />
             </div>
-          </p>
+          </div>
           <p className="ant-upload-text text-slate-800 font-medium mb-1">Seret dan lepas file ke area ini, atau klik untuk menelusuri</p>
           <p className="ant-upload-hint text-sm text-slate-500 mb-6">
             Mendukung file .xlsx, .csv, .xls (Maksimal 50MB)

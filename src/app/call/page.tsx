@@ -456,7 +456,7 @@ export default function CallCenter() {
       <Drawer
         title="Live Monitoring Percakapan"
         placement="right"
-        width={480}
+        size={480}
         onClose={() => setMonitoringAgent(null)}
         open={!!monitoringAgent}
         className="custom-drawer"
@@ -626,7 +626,7 @@ export default function CallCenter() {
       <Drawer
         title="Detail Rekaman Panggilan"
         placement="right"
-        width={480}
+        size={480}
         onClose={() => setPlayingRecording(null)}
         open={!!playingRecording}
         className="custom-drawer"
